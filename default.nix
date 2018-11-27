@@ -1,6 +1,7 @@
 { pkgs ? (import (import ./fetch-nixpkgs.nix) {}) }:
 
 let
+  hie82Pkgs = import ./ghc-8.2.nix { inherit pkgs; };
   hie84Pkgs = (import ./ghc-8.4.nix { inherit pkgs; }).override {
     overrides = self: super: {
       # https://github.com/input-output-hk/stack2nix/issues/103
@@ -14,6 +15,9 @@ let
     };
   };
   jse = pkgs.haskell.lib.justStaticExecutables;
+  enableProfiling = drv:
+    let inherit (pkgs.haskell) lib; in
+    lib.enableExecutableProfiling (lib.enableLibraryProfiling drv);
 in with pkgs; rec {
  stack2nix = pkgs.stack2nix;
  hies = runCommandNoCC "hies" {
@@ -25,6 +29,6 @@ in with pkgs; rec {
    makeWrapper ${hie84}/bin/hie-wrapper $out/bin/hie-wrapper \
      --prefix PATH : $out/bin
  '';
- hie82 = jse (import ./ghc-8.2.nix { inherit pkgs; }).haskell-ide-engine;
- hie84 = jse hie84Pkgs.haskell-ide-engine;
+ hie82 = enableProfiling hie82Pkgs.haskell-ide-engine;
+ hie84 = enableProfiling hie84Pkgs.haskell-ide-engine;
 }
