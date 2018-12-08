@@ -17,7 +17,16 @@ let
   jse = pkgs.haskell.lib.justStaticExecutables;
   enableProfiling = drv:
     let inherit (pkgs.haskell) lib; in
-    lib.enableExecutableProfiling (lib.enableLibraryProfiling drv);
+    lib.overrideCabal drv (drv: {
+      enableExecutableProfiling = true;
+      enableLibraryProfiling = true;
+      configureFlags =
+        [
+          ''--ghc-options=-with-rtsopts=-p''
+          ''--ghc-options=-with-rtsopts=-h''
+        ]
+        ++ (drv.configureFlags or []);
+    });
 in with pkgs; rec {
  stack2nix = pkgs.stack2nix;
  hies = runCommandNoCC "hies" {
